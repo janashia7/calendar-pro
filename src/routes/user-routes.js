@@ -7,4 +7,8 @@ router.get('/dashboard', isLoggedIn, userController.getDashboard);
 
 router.get('/events', userController.getEvents);
 
+router.post('/sendCode', userController.sendCode.bind());
+
+router.post('/verify', userController.verify.bind());
+
 module.exports = router;
