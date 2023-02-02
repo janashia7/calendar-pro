@@ -44,6 +44,8 @@ exports.sendCode = async (req, res) => {
   const token = authorization.replace('Bearer ', '');
 
   const { email } = await oauth2Client.getTokenInfo(token);
+  
+  //TODO : Find user by email and add phone number to database
 
   if (!number) {
     return res.json({ message: 'Please input the number' });
