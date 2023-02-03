@@ -2,7 +2,7 @@ const { google } = require('googleapis');
 const User = require('../db/models/user-model');
 const userService = require('../services/user-services');
 const messagebird = require('messagebird').initClient(
-  'sBQnHtWDHnK7Y9OHfdvpAy3C8'
+  'ofU6dC6BjwiiFhqwflTnM9LTY'
 );
 
 exports.getEvents = async (req, res) => {
@@ -38,21 +38,21 @@ exports.login = async (req, res) => {
 
 exports.sendCode = async (req, res) => {
   const oauth2Client = new google.auth.OAuth2();
-  const { number } = req.body;
+  const { phone_number } = req.body;
   const { authorization } = req.headers;
 
   const token = authorization.replace('Bearer ', '');
 
   const { email } = await oauth2Client.getTokenInfo(token);
-  
-  //TODO : Find user by email and add phone number to database
 
-  if (!number) {
+  if (!phone_number) {
     return res.json({ message: 'Please input the number' });
   }
 
+  await User.findOneAndUpdate({ email }, { phone_number });
+
   messagebird.verify.create(
-    number,
+    phone_number,
     {
       originator: 'CalendarPro',
       template: 'Your verification code is %token.',
@@ -74,7 +74,11 @@ exports.verify = async (req, res) => {
     if (err) {
       res.json({ error: err.errors[0].description, id });
     } else {
-      await User.updateOne({ email });
+      const phoneNumber = '+' + response.recipient;
+      await User.findOneAndUpdate(
+        { phone_number: phoneNumber },
+        { verified: true }
+      );
       res.json(response);
     }
   });
