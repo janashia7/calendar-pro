@@ -1,8 +1,9 @@
 const { google } = require('googleapis');
 const User = require('../db/models/user-model');
 const userService = require('../services/user-services');
+require('dotenv').config();
 const messagebird = require('messagebird').initClient(
-  'ofU6dC6BjwiiFhqwflTnM9LTY'
+  process.env.MESSAGEBIRD_API_KEY
 );
 
 exports.getEvents = async (req, res) => {
