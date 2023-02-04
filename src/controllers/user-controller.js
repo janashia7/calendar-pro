@@ -26,15 +26,16 @@ exports.login = async (req, res) => {
 
   const user = await User.findOne({ email });
 
-  if (user && user.phone_number) {
+  if (user && user.verified) {
     return res.redirect('/user/dashboard');
   } else if (user && !user.phone_number) {
-    return res.redirect('/user/add_number');
+    return res.json({ message: 'Please add phone number' });
+  } else if (user && !user.verified) {
+    return res.json({ message: 'Please verify phone number' });
   }
-
   await User.create({ email, given_name, family_name, picture });
 
-  res.redirect('/user/add-number');
+  res.json({ message: 'Add and verify phone number' });
 };
 
 exports.sendCode = async (req, res) => {
@@ -44,13 +45,11 @@ exports.sendCode = async (req, res) => {
 
   const token = authorization.replace('Bearer ', '');
 
-  const { email } = await oauth2Client.getTokenInfo(token);
-
   if (!phone_number) {
     return res.json({ message: 'Please input the number' });
   }
 
-  await User.findOneAndUpdate({ email }, { phone_number });
+  await userService.addPhone(oauth2Client, token, phone_number);
 
   messagebird.verify.create(
     phone_number,
@@ -75,11 +74,7 @@ exports.verify = async (req, res) => {
     if (err) {
       res.json({ error: err.errors[0].description, id });
     } else {
-      const phoneNumber = '+' + response.recipient;
-      await User.findOneAndUpdate(
-        { phone_number: phoneNumber },
-        { verified: true }
-      );
+      await userService.verifyPhone(response.recipient);
       res.json(response);
     }
   });
