@@ -1,7 +1,7 @@
 const { google } = require('googleapis');
 const User = require('../db/models/user-model');
 
-exports.getEvents = async (client, token) => {
+exports.addReminder = async (client, token) => {
   client.setCredentials({
     access_token: token,
   });

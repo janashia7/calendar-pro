@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.get('/dashboard', isLoggedIn, userController.getDashboard);
 
-router.get('/events', userController.getEvents);
+router.get('/events', userController.addReminder);
 
 router.post('/sendCode', userController.sendCode.bind());
 
