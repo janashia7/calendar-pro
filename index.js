@@ -52,4 +52,4 @@ mongoose.set('strictQuery', false);
 
 mongoose.connect(process.env.DB_URI, () => console.log('db connected'));
 
-app.listen(port, () => console.log('server running on port' + port));
+app.listen(port, () => console.log('server running on port ' + port));
