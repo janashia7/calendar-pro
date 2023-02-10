@@ -11,7 +11,6 @@ require('dotenv').config();
 const app = express();
 
 const { CLIENT_ID, CLIENT_SECRET, CB_URL } = process.env;
-
 app.use(express.json());
 app.use(
   session({

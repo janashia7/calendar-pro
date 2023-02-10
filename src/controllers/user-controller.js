@@ -1,3 +1,4 @@
+const { default: axios } = require('axios');
 const { google } = require('googleapis');
 const schedule = require('node-schedule');
 const User = require('../db/models/user-model');
@@ -6,9 +7,13 @@ require('dotenv').config();
 const messagebird = require('messagebird').initClient(
   process.env.MESSAGEBIRD_API_KEY
 );
+const moment = require('moment');
 
 exports.addReminder = async (req, res) => {
   const oauth2Client = new google.auth.OAuth2();
+
+  const { email } = req.user.profile._json;
+  const { phone_number } = await User.findOne({ email, verified: true });
 
   let oldJob = null;
 
@@ -20,40 +25,61 @@ exports.addReminder = async (req, res) => {
       req.user.accessToken
     );
 
-    const { dateTime, timeZone } = events[0].start;
+    if (events.length !== 0) {
+      const { dateTime, timeZone } = events[0].start;
 
-    const msPerMinute = 60000;
-    const minuteToSubtract = 2; // user minute reminder
+      const msPerMinute = 60000;
+      const minuteToSubtract = 14; // user minute reminder
 
-    const fullMs = new Date(dateTime).valueOf();
+      const fullMs = new Date(dateTime).valueOf();
 
-    const dateWithSubtract = new Date(fullMs - minuteToSubtract * msPerMinute);
+      const dateWithSubtract = new Date(
+        fullMs - minuteToSubtract * msPerMinute
+      );
 
-    if (oldJob) {
-      oldJob.cancel();
-    }
+      const localDate = new Date(moment.utc(dateWithSubtract).local().format());
 
-    oldJob = schedule.scheduleJob(
-      {
-        hour: dateWithSubtract.getHours(),
-        minute: dateWithSubtract.getMinutes(),
-        dayOfWeek: dateWithSubtract.getDay(),
-        date: dateWithSubtract.getDate(),
-        month: dateWithSubtract.getMonth() + 1,
-        year: dateWithSubtract.getFullYear(),
-      },
-      async () => {
-        console.log(
-          'Nested ------------every 5 seconds-----------------------'
-        );
+      if (oldJob) {
+        oldJob.cancel();
       }
-    );
+
+      oldJob = schedule.scheduleJob(
+        {
+          hour: localDate.getHours(),
+          minute: localDate.getMinutes(),
+          dayOfWeek: localDate.getDay(),
+          date: localDate.getDate(),
+          month: localDate.getMonth(),
+          year: localDate.getFullYear(),
+        },
+        async () => {
+          const message =
+            "Hello, it's CalendarPro,\nDo you remember?\nThe event starts in " +
+            minuteToSubtract +
+            ' minute.';
+
+          console.log(message);
+          messagebird.messages.create(
+            {
+              originator: 'CalendarPro',
+              recipients: [phone_number],
+              body: message,
+            },
+            (err, response) => {
+              if (err) {
+                console.log(err);
+              } else {
+                console.log(response);
+              }
+            }
+          );
+        }
+      );
+    }
   });
 };
 
 exports.getDashboard = async (req, res) => {
-  const ms = new Date('2023-02-07T16:00:00+04:00').valueOf(); //1675764000000
-
   res.send(`Welcome ${req.user.profile.displayName}`);
 };
 
